@@ -1,12 +1,21 @@
 # 第一阶段：使用 Hugo 构建静态网站
-FROM klakegg/hugo:ext-alpine AS builder
+FROM alpine:latest AS builder
+
+# 安装 git 和下载工具
+RUN apk add --no-cache git wget
+
+# 下载最新 Hugo 扩展版
+RUN HUGO_VERSION=0.161.1 && \
+    wget -q "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" && \
+    tar xzf "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" hugo && \
+    mv hugo /usr/local/bin/hugo && \
+    rm "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz"
 
 # 设置工作目录
 WORKDIR /src
 
 # 克隆网站仓库（包含子模块）
-RUN apk add --no-cache git && \
-    git clone --recurse-submodules https://github.com/ivon852/ecchi-fanservice-anime-list-website.git .
+RUN git clone --recurse-submodules https://github.com/ivon852/ecchi-fanservice-anime-list-website.git .
 
 # 克隆数据仓库到 data 目录
 RUN git clone https://github.com/ivon852/ecchi-fanservice-anime-list-data.git temp_data && \
@@ -20,8 +29,13 @@ RUN hugo --gc --minify
 # 第二阶段：使用 Nginx 提供静态文件服务，支持定时更新
 FROM nginx:alpine
 
-# 安装 git、Hugo、dcron（定时任务）
-RUN apk add --no-cache git hugo dcron
+# 安装 git、dcron（定时任务），并从 GitHub 下载最新 Hugo
+RUN apk add --no-cache git dcron wget && \
+    HUGO_VERSION=0.161.1 && \
+    wget -q "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" && \
+    tar xzf "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" hugo && \
+    mv hugo /usr/local/bin/hugo && \
+    rm "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz"
 
 # 复制 Hugo 源码（包含 .git 信息，用于后续更新）
 COPY --from=builder /src /src
