@@ -1,12 +1,12 @@
 # 第一阶段：使用 Hugo 构建静态网站
 FROM alpine:latest AS builder
 
-# 安装 git 和下载工具
-RUN apk add --no-cache git wget
+# 安装 git、下载工具和 CA 证书
+RUN apk add --no-cache git wget ca-certificates
 
-# 下载最新 Hugo 扩展版
+# 下载 Hugo 扩展版
 RUN HUGO_VERSION=0.161.1 && \
-    wget -q "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" && \
+    wget "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" && \
     tar xzf "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" hugo && \
     mv hugo /usr/local/bin/hugo && \
     rm "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz"
@@ -30,9 +30,9 @@ RUN hugo --gc --minify
 FROM nginx:alpine
 
 # 安装 git、dcron（定时任务），并从 GitHub 下载最新 Hugo
-RUN apk add --no-cache git dcron wget && \
+RUN apk add --no-cache git dcron wget ca-certificates && \
     HUGO_VERSION=0.161.1 && \
-    wget -q "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" && \
+    wget "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" && \
     tar xzf "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" hugo && \
     mv hugo /usr/local/bin/hugo && \
     rm "hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz"
